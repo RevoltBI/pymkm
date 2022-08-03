@@ -575,7 +575,7 @@ class PyMkmApi:
                     f.write(decoded_data)
 
                 reader = None
-                with open("stock.csv", "r") as f:
+                with open("stock.csv", "r", encoding='utf8', newline='') as f:
                     reader = csv.DictReader(f, dialect=dialect)
                     for row in reader:
                         return_dict.append(row)

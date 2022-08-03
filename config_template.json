@@ -46,13 +46,16 @@
   "csv_import_filename": "list.csv",
   "csv_import_default_condition": "NM",
   "csv_import_columns": [
-    "name",
-    "set_name",
-    "count",
+    "",
+    "",
+    "",
+    "mcm_id",
     "foil",
-    "language_name",
-    "condition",
-    "comments"
+    "name",
+    "",
+    "",
+    "",
+    "rarity"
   ],
   "show_num_best_worst_items": 20,
   "show_top_x_expensive_items": 20,

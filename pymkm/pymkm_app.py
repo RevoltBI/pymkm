@@ -1223,83 +1223,93 @@ class PyMkmApp:
 
     def match_card_and_add_stock(self, api, row_dict):
         # splice out the variables
+        mcm_id = row_dict.get("mcm_id")
+        rarity = row_dict.get("rarity")
         name = row_dict.get("name")
         set_name = row_dict.get("set_name")
         language_name = row_dict.get("language_name")
-        language_id = 1 if language_name == "" else api.languages.index(language_name)
-        count = row_dict.get("count")
+        language_id = 1 if not language_name else api.languages.index(language_name)
+        count = row_dict.get("count", 1)
         foil = True if row_dict.get("foil").lower() == "foil" else False
         condition = (
             row_dict.get("condition")
             if row_dict.get("condition")
             else self.config["csv_import_default_condition"]
         )
-        comments = "" if row_dict.get("comments") == None else row_dict.get("comments")
+        comments = "" if row_dict.get("comments") is None else row_dict.get("comments")
         playset = True if row_dict.get("playset") else False
         signed = True if row_dict.get("signed") else False
         altered = True if row_dict.get("altered") else False
 
-        if all(v != "" for v in [name, set_name, count]):
-            try:
-                possible_products = api.find_product(name, idGame="1")  # ["product"]
-            except CardmarketError as err:
-                self.logger.error(err.mkm_msg())
-                print(err.mkm_msg())
-            except Exception as err:
-                return False
-            else:
-                if len(possible_products) == 0:
-                    # no viable match
+        # if (mcm_id and count are all specified) or (name, set_name and count are all specified)
+        if all(v != "" for v in [mcm_id, rarity, count]) or all(v != "" for v in [name, set_name, count]):
+            if not mcm_id:
+                try:
+                    possible_products = api.find_product(name, idGame="1")  # ["product"]
+                except CardmarketError as err:
+                    self.logger.error(err.mkm_msg())
+                    print(err.mkm_msg())
+                    return False
+                except Exception as err:
                     return False
                 else:
-                    product_match = [
-                        x
-                        for x in possible_products
-                        if x["categoryName"] == "Magic Single"
-                        and self.card_equals(
-                            x["enName"], x["expansionName"], name, set_name
-                        )
-                    ]
-                    if len(product_match) == 1:
-
-                        product = api.get_product(product_match[0]["idProduct"])
-                        price = self.get_price_for_product(
-                            product,
-                            product_match[0]["rarity"],
-                            condition,
-                            foil,
-                            playset,
-                            language_id=language_id,
-                            api=self.api,
-                        )
-                        # idProduct
-                        # count
-                        # idLanguage
-                        # comments
-                        # price
-                        # condition
-                        # isFoil
-                        # isSigned
-                        # isAltered
-                        # isPlayset
-                        # isFirstEd
-                        card = {
-                            "idProduct": product_match[0]["idProduct"],
-                            "count": count,
-                            "idLanguage": language_id,
-                            "comments": comments,
-                            "price": str(price),
-                            "condition": condition,
-                            "isFoil": ("true" if foil else "false"),
-                            "isSigned": ("true" if signed else "false"),
-                            "isAltered": ("true" if altered else "false"),
-                            "isPlayset": ("true" if playset else "false"),
-                        }
-                        api.add_stock([card])
-                        return True
-                    else:
-                        # no single matching card
+                    if len(possible_products) == 0:
+                        # no viable match
                         return False
+                    else:
+                        product_match = [
+                            x
+                            for x in possible_products
+                            if x["categoryName"] == "Magic Single"
+                            and self.card_equals(
+                                x["enName"], x["expansionName"], name, set_name
+                            )
+                        ]
+                        if len(product_match) == 1:
+                            id_product = product_match[0]["idProduct"]
+                            rarity = product_match[0]["rarity"]
+                        else:
+                            # no single matching card
+                            return False
+            else:
+                id_product = mcm_id
+
+            product = api.get_product(id_product)
+            price = self.get_price_for_product(
+                product,
+                rarity,
+                condition,
+                foil,
+                playset,
+                language_id=language_id,
+                api=self.api,
+            )
+            # idProduct
+            # count
+            # idLanguage
+            # comments
+            # price
+            # condition
+            # isFoil
+            # isSigned
+            # isAltered
+            # isPlayset
+            # isFirstEd
+            card = {
+                "idProduct": id_product,
+                "count": count,
+                "idLanguage": language_id,
+                "comments": comments,
+                "price": str(price),
+                "condition": condition,
+                "isFoil": ("true" if foil else "false"),
+                "isSigned": ("true" if signed else "false"),
+                "isAltered": ("true" if altered else "false"),
+                "isPlayset": ("true" if playset else "false"),
+            }
+            api.add_stock([card])
+            return True
+
         else:
             # incomplete data from card scanner
             return False

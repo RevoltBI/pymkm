@@ -1179,7 +1179,7 @@ class PyMkmApp:
         with open(self.config["csv_import_filename"], newline="") as csvfile:
             csv_reader = csvfile.readlines()
             index = 0
-            card_rows = (sum(1 for row in csv_reader)) - 1
+            card_rows = (sum(1 for row in csv_reader))
             bar = progressbar.ProgressBar(max_value=card_rows)
             self.logger.debug(f"-> import_from_csv: {card_rows} cards in csv file.")
             csvfile.seek(0)
